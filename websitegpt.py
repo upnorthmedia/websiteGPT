@@ -1,13 +1,17 @@
+import os
+import time
+from urllib.parse import urlparse
+from tkinter.simpledialog import askstring
+from tkinter.messagebox import showinfo, showerror
+
 import requests
 from bs4 import BeautifulSoup
-import os
-from urllib.parse import urlparse
-import time
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.common.by import By
-from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
+from selenium.webdriver.support.ui import WebDriverWait
+
 
 class SitemapScraper:
     def __init__(self, output_folder='output'):
@@ -33,7 +37,7 @@ class SitemapScraper:
             urls = [loc.text for loc in soup.find_all('loc')]
             return urls
         except requests.RequestException as e:
-            print(f"Error fetching sitemap: {e}")
+            showerror("Error", f"Error fetching sitemap: {e}")
             return []
 
     def sanitize_filename(self, url):
@@ -66,17 +70,17 @@ class SitemapScraper:
             print(f"Processed {filename}")
             return True
         except Exception as e:
-            print(f"Error saving text for {url}: {e}")
+            showerror("Error", f"Error saving text for {url}: {e}")
             return False
 
     def process_sitemap(self, sitemap_url):
         """Process entire sitemap and save all pages as text."""
         urls = self.fetch_sitemap(sitemap_url)
         if not urls:
-            print("No URLs found in sitemap.")
+            showerror("Error", "No URLs found in sitemap.")
             return {}
 
-        print(f"Found {len(urls)} URLs in sitemap.")
+        showinfo("Info", f"Found {len(urls)} URLs in sitemap.")
         try:
             for url in urls:
                 self.save_as_text(url)
@@ -88,7 +92,8 @@ class SitemapScraper:
 
 def get_user_preference():
     while True:
-        choice = input("""
+        choice = askstring("File Input",
+"""
 Choose output format:
 1. Individual files (one file per page)
 2. Single merged file (all pages in one file with headers)
@@ -103,7 +108,7 @@ def main():
     # Get user preference at start
     merge_files = get_user_preference()
     
-    sitemap_url = input("Enter sitemap URL (e.g., https://example.com/sitemap.xml): ")
+    sitemap_url = askstring("Url Input", "Enter sitemap URL (e.g., https://example.com/sitemap.xml): ")
     scraper = SitemapScraper()
     scraped_content = scraper.process_sitemap(sitemap_url)  # Get the content
 
