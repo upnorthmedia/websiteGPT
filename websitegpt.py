@@ -8,6 +8,8 @@ from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
+from tkinter.simpledialog import askstring
+from tkinter.messagebox import showinfo, showerror
 
 class SitemapScraper:
     def __init__(self, output_folder='output'):
@@ -33,7 +35,7 @@ class SitemapScraper:
             urls = [loc.text for loc in soup.find_all('loc')]
             return urls
         except requests.RequestException as e:
-            print(f"Error fetching sitemap: {e}")
+            showerror("Error", f"Error fetching sitemap: {e}")
             return []
 
     def sanitize_filename(self, url):
@@ -63,20 +65,20 @@ class SitemapScraper:
             # Store content in dictionary instead of saving directly
             self.scraped_content[filename] = text_content
             
-            print(f"Processed {filename}")
+            showinfo("Info", f"Processed {filename}")
             return True
         except Exception as e:
-            print(f"Error saving text for {url}: {e}")
+            showerror("Error", f"Error saving text for {url}: {e}")
             return False
 
     def process_sitemap(self, sitemap_url):
         """Process entire sitemap and save all pages as text."""
         urls = self.fetch_sitemap(sitemap_url)
         if not urls:
-            print("No URLs found in sitemap.")
+            showerror("Error", "No URLs found in sitemap.")
             return {}
 
-        print(f"Found {len(urls)} URLs in sitemap.")
+        showinfo("Info", f"Found {len(urls)} URLs in sitemap.")
         try:
             for url in urls:
                 self.save_as_text(url)
@@ -88,7 +90,8 @@ class SitemapScraper:
 
 def get_user_preference():
     while True:
-        choice = input("""
+        choice = askstring("File Input",
+"""
 Choose output format:
 1. Individual files (one file per page)
 2. Single merged file (all pages in one file with headers)
@@ -103,12 +106,12 @@ def main():
     # Get user preference at start
     merge_files = get_user_preference()
     
-    sitemap_url = input("Enter sitemap URL (e.g., https://example.com/sitemap.xml): ")
+    sitemap_url = askstring("Url Input", "Enter sitemap URL (e.g., https://example.com/sitemap.xml): ")
     scraper = SitemapScraper()
     scraped_content = scraper.process_sitemap(sitemap_url)  # Get the content
 
     # Handle output based on user preference
-    if merge_files:
+    if merge_files and scraped_content:
         # Merged file output
         with open('merged_output.txt', 'w', encoding='utf-8') as f:
             for filename, content in scraped_content.items():
@@ -117,11 +120,13 @@ def main():
                 f.write(f"{'='*50}\n\n")
                 f.write(content)
                 f.write('\n\n')
-    else:
+    elif scraped_content:
         # Individual files output
         for filename, content in scraped_content.items():
             with open(f"output/{filename}", 'w', encoding='utf-8') as f:
                 f.write(content)
+    else:
+        showerror("Error", "No Content to save")
 
 if __name__ == "__main__":
     main()
